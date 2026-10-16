@@ -18,13 +18,37 @@ export class NotasControlador {
     this.#modelo = modelo;
     this.#vista = vista;
 
-    // TODO 4A: regístrate en la Vista (vista.alAgregar, vista.alEliminar, vista.alCalificar).
-    //          Cada manejador convierte los datos (la Vista entrega TEXTO; el Modelo espera números y null)
-    //          y le da la orden al Modelo.
+    vista.alAgregar((datos) =>
+      this.#intentar(
+        () => this.#modelo.agregar({ nombre: datos.nombre, peso: this.#aNumero(datos.peso), nota: this.#aNota(datos.nota) }),
+        () => this.#vista.limpiarFormulario(),
+      ),
+    );
+    vista.alEliminar((id) => this.#intentar(() => this.#modelo.eliminar(id)));
+    vista.alCalificar((id, texto) => this.#intentar(() => this.#modelo.calificar(id, this.#aNota(texto))));
   }
 
-  // TODO 4B: un método privado que ejecute una orden al Modelo y, si lanza un ErrorDeReglas, le pida a la Vista
-  //          que muestre el mensaje (y que se redibuje, para deshacer lo que el usuario escribió y el Modelo no aceptó).
-  //          Los errores que NO sean de reglas no se esconden: se vuelven a lanzar.
-  //          Si todo sale bien: limpia el error. Para "agregar", además limpia el formulario.
+  /** Ejecuta una orden al Modelo y reacciona: error de reglas → mostrarlo; éxito → limpiar. */
+  #intentar(orden, alTerminar) {
+    try {
+      orden();
+    } catch (error) {
+      if (!(error instanceof ErrorDeReglas)) throw error; // los errores que no son de reglas no se esconden
+      this.#vista.mostrarError(error.message);
+      this.#vista.render(); // deshace en pantalla lo que el usuario escribió y el Modelo no aceptó
+      return;
+    }
+    this.#vista.limpiarError();
+    alTerminar?.();
+  }
+
+  /** Texto → número (NaN si no es un número: el Modelo lo rechazará con su mensaje). */
+  #aNumero(texto) {
+    return parseFloat(texto);
+  }
+
+  /** Texto → nota: vacío significa «sin nota» (null). */
+  #aNota(texto) {
+    return String(texto).trim() === '' ? null : this.#aNumero(texto);
+  }
 }
