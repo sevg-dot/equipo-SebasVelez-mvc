@@ -54,6 +54,9 @@ export class NotasModelo {
     const limpio = String(nombre ?? '').trim();
     if (limpio === '') throw new ErrorDeReglas('El nombre es obligatorio.');
     if (limpio.length > MAX_NOMBRE) throw new ErrorDeReglas(`El nombre no puede superar ${MAX_NOMBRE} caracteres.`);
+    if (this.#evaluaciones.some((e) => e.nombre.toLowerCase() === limpio.toLowerCase())) {
+      throw new ErrorDeReglas('Ya existe una evaluación con ese nombre.');
+    }
     if (!Number.isFinite(peso) || peso < 1 || peso > 100) throw new ErrorDeReglas('El peso debe estar entre 1 y 100.');
     this.#validarNota(nota);
 
